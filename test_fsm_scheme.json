@@ -1,0 +1,25 @@
+{
+    "instance": "fsm",
+    "init": {
+        "K": ["q1", "q2"],
+        "s": "start",
+        "F": ["q3"]
+    },
+    "transitions": [
+        {
+            "from": "start",
+            "conditions": [["a"]],
+            "to": ["q1"]
+        },
+        {
+            "from": "q1",
+            "conditions": [["b"], ["c"]],
+            "to": ["q2", "q3"]
+        },
+        {
+            "from": "q2",
+            "conditions": [["c"], ["b"]],
+            "to": ["q3", "q2"]
+        }
+    ]
+}

@@ -28,12 +28,60 @@ def coroutined(state_fn):
                 break
     return wrapper_coroutined
 
-class Automata:
+class SchemeMixin:        
+    def from_json(json_file):
+        import json
+        with open(json_file) as f:
+            scheme = json.load(f)
+            success, log = SchemeMixin.scheme_validation(scheme)
+            if success:
+                return SchemeMixin.build_from_scheme(scheme)
+            else:
+                raise BaseException('Validation error, {}'.format(log))
+                
+    def scheme_validation(scheme):
+        return True, 'Success!'
+    '''
+    def from_image(img_file):
+        pass
+    
+    def scheme_vis():
+        pass
+    '''
+    def build_from_scheme(scheme):
+        instance = scheme['instance']
+        init = scheme['init']
+        def factory():
+            def add_state(evaluator, query):
+                [from_state, conds, to_states] = query
+                @evaluator.state(from_state)
+                def state_fn(token):
+                    for cond, state in zip(conds, to_states):
+                        if token in cond:
+                            return evaluator.transition(state, token)
+                    return False
+            if instance.lower() == 'fsm':
+                transitions = scheme['transitions']
+                K, s, F = init["K"], init["s"], init["F"]
+                evaluator = FSM(K = K,
+                                s = s,
+                                F = F)
+                for transition in transitions:
+                    query = list(transition.values())
+                    add_state(evaluator, query)
+                for f in F:
+                    add_state(evaluator, [f, [], [f]])
+            evaluator.reset()
+            return evaluator
+        return factory
+            
+class Automata(SchemeMixin):
     def __init__(self,
                K = [],
                s = [],
                F = [],
                A = string.printable):
+        SchemeMixin.__init__(self)
         self.s = s
         self.K = K
         self.F = F
@@ -43,6 +91,7 @@ class Automata:
         self.all_states = [self.s, *self.K, *self.F]
         self.states = {k: None for k in self.all_states}
         self.state_factories = {k: None for k in self.all_states}
+    
     
     def reset(self):
         self.log = []
@@ -91,7 +140,7 @@ class Automata:
     
     def evalute(self, istream):
         for token in istream:
-                self.send(token)
+            self.send(token)
                 
     def create_task(evaluator_factory, log = False):
         def task(istream):
